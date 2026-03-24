@@ -1,0 +1,486 @@
+{
+  "name": "recibir_comprobante",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "comprobante",
+        "options": {
+          "responseData": "On Received"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "98f055e6-5d1b-4025-a040-590c8ffa7f71",
+      "name": "comprobante",
+      "webhookId": "51f178df-dbb4-451d-a460-2b71b11210b9"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "file",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "39929d84-8123-47e4-af33-387bc0c27ff9",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=Analiza el siguiente texto de un comprobante de pago:\n\n{{ $json.text }}\n\nResponde **EXCLUSIVAMENTE** en JSON válido, sin texto adicional.\n\nEl JSON debe tener esta estructura exacta:\n\n{\n\"DE\": {\n\"envia\": \"string\",\n\"cuit_cuil\": \"string\",\n\"cvu\": \"string\"\n},\n\"PARA\": {\n\"recibe\": \"string\",\n\"cuit_cuil\": \"string\",\n\"cvu\": \"string\"\n},\n\"DETALLE\": {\n\"Fecha/Hora\" : \"string\"\n\"es_transferencia\": true,\n\"monto\": 0,\n\"valido\": false,\n\"codigo_identificacion\": \"string\"\n}\n}\n\nReglas:\n\n* \"Fecha/Hora\" = Es la fecha y hora del comprobante de pago.\n* \"es_transferencia\" = true si el comprobante corresponde a una transferencia bancaria o billetera virtual.\n* \"monto\" = número detectado (sin símbolos, solo número).\n* \"alias\" = alias, CVU o CBU detectado del destinatario.\n* \"codigo_identificacion\" = código, ID o número de operación (es el ultimo numero del comprobante).\n* \"valido\" = true SOLO si se cumplen TODAS estas condiciones:\n\n  * es_transferencia = true\n  * monto existe\n  * alias existe\n\nDatos de las cuentas:\n\n* \"DE.envia\" = nombre de quien envía el dinero.\n\n* \"DE.cuit_cuil\" = CUIT o CUIL del emisor.\n\n* \"DE.cvu\" = CVU/CBU del emisor.\n\n* \"PARA.recibe\" = nombre de quien recibe el dinero.\n\n* \"PARA.cuit_cuil\" = CUIT o CUIL del receptor.\n\n* \"PARA.cvu\" = CVU/CBU del receptor.\n\nSi algún dato no está presente, usar null.\n\nNo inventar datos. No agregar texto fuera del JSON.\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        384,
+        0
+      ],
+      "id": "8dda3a9d-069f-4f7f-a832-00a2d40f1c46",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "6WkGRdlLR308pg8i",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let raw = $input.first().json.output[0].content[0].text;\n\ntry {\n  // 1. Eliminar bloques ```json ... ```\n  raw = raw.replace(/```json/g, '').replace(/```/g, '');\n\n  // 2. Quitar comillas externas si existen\n  if (raw.startsWith('\"') && raw.endsWith('\"')) {\n    raw = raw.slice(1, -1);\n  }\n\n  // 3. Limpiar caracteres escapados\n  raw = raw\n    .replace(/\\\\n/g, '')\n    .replace(/\\\\\"/g, '\"')\n    .replace(/\\\\t/g, '')\n    .trim();\n\n  // 4. Parsear\n  let parsed = JSON.parse(raw);\n\n  return [\n    {\n      json: parsed\n    }\n  ];\n\n} catch (error) {\n  return [\n    {\n      json: {\n        error: \"No se pudo parsear el JSON\",\n        limpio: raw\n      }\n    }\n  ];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        704,
+        0
+      ],
+      "id": "dd251e28-4fad-43d7-9bb3-5d0d332b74c1",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b79cc789-b574-400e-81a3-47ed762445e6",
+              "leftValue": "={{ $('Code in JavaScript').item.json.PARA.cvu }}",
+              "rightValue": "0070132330004065450791",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "2a22dc82-9789-4f20-804f-c58443eb81bc",
+              "leftValue": "={{ $json['CUIT / CUIL'] }}",
+              "rightValue": "={{ $('Code in JavaScript').item.json.DE.cuit_cuil }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "0a3bbe3e-3225-404a-b321-5e335b294291",
+              "leftValue": "={{ $('comprobante').item.json.body.usuario }}",
+              "rightValue": "={{ $json.Usuario }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1152,
+        0
+      ],
+      "id": "e5058411-feeb-4e91-92f0-b24652a9906a",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1wZ_y6mv-P0HLJwBAlmIkCrnRkEeMJRC2WIfGbSaUciQ",
+          "mode": "list",
+          "cachedResultName": "Pedidos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wZ_y6mv-P0HLJwBAlmIkCrnRkEeMJRC2WIfGbSaUciQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wZ_y6mv-P0HLJwBAlmIkCrnRkEeMJRC2WIfGbSaUciQ/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "CUIT / CUIL",
+              "lookupValue": "={{ $json.DE.cuit_cuil }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        944,
+        0
+      ],
+      "id": "c7028e14-58e1-4069-a1b2-aedfeb5d95fc",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WNWYDdKNBy55KqxT",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "1485124289643417671",
+          "mode": "list",
+          "cachedResultName": "Tobibj11",
+          "cachedResultUrl": "https://discord.com/channels/1485124289643417671"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "1485732698961088532",
+          "mode": "list",
+          "cachedResultName": "pruebas-ai",
+          "cachedResultUrl": "https://discord.com/channels/1485124289643417671/1485732698961088532"
+        },
+        "content": "Pago confirmado ✅\nTu pedido está en preparación 🍔🔥",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        -96
+      ],
+      "id": "aecaf6ff-8c0d-46d0-bc6c-beecbe442d09",
+      "name": "Send a message",
+      "webhookId": "cd57b68f-6fc7-4988-a0c4-22330a139068",
+      "credentials": {
+        "discordBotApi": {
+          "id": "a5U8yEAZYpVdrnFK",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "1485124289643417671",
+          "mode": "list",
+          "cachedResultName": "Tobibj11",
+          "cachedResultUrl": "https://discord.com/channels/1485124289643417671"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "1485732698961088532",
+          "mode": "list",
+          "cachedResultName": "pruebas-ai",
+          "cachedResultUrl": "https://discord.com/channels/1485124289643417671/1485732698961088532"
+        },
+        "content": "El monto del comprobante no coincide ❌\nPor favor revisalo o contactanos",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        96
+      ],
+      "id": "5fc8492c-85ed-404f-991e-4210d84363c0",
+      "name": "Send a message1",
+      "webhookId": "349160ee-a41a-46ea-a8e3-608eb07f6ca0",
+      "credentials": {
+        "discordBotApi": {
+          "id": "a5U8yEAZYpVdrnFK",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1wZ_y6mv-P0HLJwBAlmIkCrnRkEeMJRC2WIfGbSaUciQ",
+          "mode": "list",
+          "cachedResultName": "Pedidos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wZ_y6mv-P0HLJwBAlmIkCrnRkEeMJRC2WIfGbSaUciQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wZ_y6mv-P0HLJwBAlmIkCrnRkEeMJRC2WIfGbSaUciQ/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "CUIT / CUIL": "={{ $('Code in JavaScript').item.json.DE.cuit_cuil }}",
+            "Estado": "pago confirmado"
+          },
+          "matchingColumns": [
+            "CUIT / CUIL"
+          ],
+          "schema": [
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "CUIT / CUIL",
+              "displayName": "CUIT / CUIL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Usuario",
+              "displayName": "Usuario",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Pedido",
+              "displayName": "Pedido",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Pago",
+              "displayName": "Pago",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Direccion",
+              "displayName": "Direccion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1552,
+        -96
+      ],
+      "id": "ab0a75c5-9a27-4ede-aa34-420c2a1a854e",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WNWYDdKNBy55KqxT",
+          "name": "Google Sheets account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "comprobante": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "034c370e-cb09-4d74-8e64-d347225b5ae1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e4fe76a2f920c3511bf864d4bfdb7032e70c745563e9fbed1a83ab8f881fe013"
+  },
+  "id": "pIrBk0VsSVYMJeHY",
+  "tags": []
+}

@@ -1,0 +1,700 @@
+{
+  "name": "casa_de_comida",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pedido-discord",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -304,
+        -16
+      ],
+      "id": "4b7d7d88-2cc4-4f95-8367-97f655555534",
+      "name": "Webhook",
+      "webhookId": "738ffbed-9f02-4b4f-968b-f01eaa652d85"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "00c70e7b-e847-4a76-bdf1-9c28da7b04c2",
+              "leftValue": "={{ $json.body.mensaje }}",
+              "rightValue": "!pedido",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -112,
+        -16
+      ],
+      "id": "2a194892-ad57-4189-9a31-57fa58b5c443",
+      "name": "Si es pedido o no"
+    },
+    {
+      "parameters": {
+        "jsCode": "const texto = $('Webhook').first().json.body.mensaje\n\n// sacamos \"!pedido \"\nconst limpio = texto.replace('!pedido ', '');\n\n// separamos por |\nconst partes = limpio.split('|');\n\nreturn [{\n  usuario: $json.usuario,\n  cuit_cuil :partes[0].trim(),\n  pedido: partes[1].trim(),\n  pago: partes[2].trim().toLowerCase(),\n  direccion: partes[3].trim(),\n  estado: 'pendiente_pago'\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        96,
+        -112
+      ],
+      "id": "42a87ac4-7b2c-4e5c-8581-d08d0d1a29b9",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1wZ_y6mv-P0HLJwBAlmIkCrnRkEeMJRC2WIfGbSaUciQ",
+          "mode": "list",
+          "cachedResultName": "Pedidos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wZ_y6mv-P0HLJwBAlmIkCrnRkEeMJRC2WIfGbSaUciQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wZ_y6mv-P0HLJwBAlmIkCrnRkEeMJRC2WIfGbSaUciQ/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Pedido": "={{ $json.pedido }}",
+            "Pago": "={{ $json.pago }}",
+            "Direccion": "={{ $json.direccion }}",
+            "Estado": "={{ $json.estado }}",
+            "Usuario": "={{ $('Si es pedido o no').item.json.body.usuario }}",
+            "ID": "={{Date.now()}}",
+            "Fecha": "={{new Date().toLocaleString()}}",
+            "CUIT / CUIL": "={{ $json.cuit_cuil }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CUIT / CUIL",
+              "displayName": "CUIT / CUIL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Usuario",
+              "displayName": "Usuario",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Pedido",
+              "displayName": "Pedido",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Pago",
+              "displayName": "Pago",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Direccion",
+              "displayName": "Direccion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        416,
+        -112
+      ],
+      "id": "fafdb4ce-a187-47d5-a75e-4af87d2659b2",
+      "name": "Agregar pedidos a sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WNWYDdKNBy55KqxT",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "1485124289643417671",
+          "mode": "list",
+          "cachedResultName": "Tobibj11",
+          "cachedResultUrl": "https://discord.com/channels/1485124289643417671"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "1485732698961088532",
+          "mode": "list",
+          "cachedResultName": "pruebas-ai",
+          "cachedResultUrl": "https://discord.com/channels/1485124289643417671/1485732698961088532"
+        },
+        "content": "Estimado/a,\n\nHemos recibido su mensaje, pero el formato del pedido no es correcto. Para poder procesarlo adecuadamente, le solicitamos que utilice la siguiente estructura obligatoria:\n\n**!pedido [CUIT/CUIL] | [detalle del pedido] | [método de pago] | [dirección]**\n\nPor ejemplo:\n!pedido 2 milanesas | transferencia | Calle 123\n\nRecuerde que el comando **!pedido** es obligatorio al inicio del mensaje, seguido del detalle del pedido, el método de pago y la dirección, separados por el símbolo \"|\".\n\nAguardamos su mensaje corregido para poder atender su solicitud a la brevedad.\n\nMuchas gracias.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        96,
+        48
+      ],
+      "id": "14202a4b-28f6-4876-83b1-7e82e7f39537",
+      "name": "El pedido esta mal realizado",
+      "webhookId": "50c991f6-7f32-4db1-83de-8b22fce98c83",
+      "credentials": {
+        "discordBotApi": {
+          "id": "a5U8yEAZYpVdrnFK",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f4dbddaa-bd3f-4977-a5c2-9c54c91c4f2a",
+              "leftValue": "={{ $json.Pago }}",
+              "rightValue": "=transferencia",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        688,
+        -112
+      ],
+      "id": "6fc97a29-00b0-4dc6-b28f-4c8cf64984da",
+      "name": "Metodo de pago"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "1485124289643417671",
+          "mode": "list",
+          "cachedResultName": "Tobibj11",
+          "cachedResultUrl": "https://discord.com/channels/1485124289643417671"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "1485732698961088532",
+          "mode": "list",
+          "cachedResultName": "pruebas-ai",
+          "cachedResultUrl": "https://discord.com/channels/1485124289643417671/1485732698961088532"
+        },
+        "content": "Tu pedido fue recibido ✅\nPor favor enviá el comprobante de pago para confirmarlo 💳",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        880,
+        -240
+      ],
+      "id": "c378f898-2fcf-4aae-afbe-5b23554a22a1",
+      "name": "Transferencia",
+      "webhookId": "427dfdef-8287-4950-a14b-e35957a87a49",
+      "credentials": {
+        "discordBotApi": {
+          "id": "a5U8yEAZYpVdrnFK",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "1485124289643417671",
+          "mode": "list",
+          "cachedResultName": "Tobibj11",
+          "cachedResultUrl": "https://discord.com/channels/1485124289643417671"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "1485732698961088532",
+          "mode": "list",
+          "cachedResultName": "pruebas-ai",
+          "cachedResultUrl": "https://discord.com/channels/1485124289643417671/1485732698961088532"
+        },
+        "content": "Pedido confirmado ✅\nEstamos preparando tu pedido 🍔",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        880,
+        16
+      ],
+      "id": "3796b698-2776-4fb3-b31e-d9f3de9ce4d3",
+      "name": "Efectivo",
+      "webhookId": "427dfdef-8287-4950-a14b-e35957a87a49",
+      "credentials": {
+        "discordBotApi": {
+          "id": "a5U8yEAZYpVdrnFK",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1wZ_y6mv-P0HLJwBAlmIkCrnRkEeMJRC2WIfGbSaUciQ",
+          "mode": "list",
+          "cachedResultName": "Pedidos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wZ_y6mv-P0HLJwBAlmIkCrnRkEeMJRC2WIfGbSaUciQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wZ_y6mv-P0HLJwBAlmIkCrnRkEeMJRC2WIfGbSaUciQ/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ID": "={{ $('Agregar pedidos a sheet').item.json.ID }}",
+            "Estado": "esperando_comprobante"
+          },
+          "matchingColumns": [
+            "ID"
+          ],
+          "schema": [
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Usuario",
+              "displayName": "Usuario",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Pedido",
+              "displayName": "Pedido",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Pago",
+              "displayName": "Pago",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Direccion",
+              "displayName": "Direccion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1088,
+        -240
+      ],
+      "id": "9f071d81-f334-4a20-8ac0-2203f3941467",
+      "name": "esperando_comprobante",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WNWYDdKNBy55KqxT",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1wZ_y6mv-P0HLJwBAlmIkCrnRkEeMJRC2WIfGbSaUciQ",
+          "mode": "list",
+          "cachedResultName": "Pedidos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wZ_y6mv-P0HLJwBAlmIkCrnRkEeMJRC2WIfGbSaUciQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wZ_y6mv-P0HLJwBAlmIkCrnRkEeMJRC2WIfGbSaUciQ/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ID": "={{ $('Agregar pedidos a sheet').item.json.ID }}",
+            "Estado": "confirmado"
+          },
+          "matchingColumns": [
+            "ID"
+          ],
+          "schema": [
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Usuario",
+              "displayName": "Usuario",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Pedido",
+              "displayName": "Pedido",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Pago",
+              "displayName": "Pago",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Direccion",
+              "displayName": "Direccion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1104,
+        16
+      ],
+      "id": "1d1ce74f-7133-4daa-9963-cc327db8ee61",
+      "name": "pago_confirmado",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WNWYDdKNBy55KqxT",
+          "name": "Google Sheets account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Si es pedido o no",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Si es pedido o no": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "El pedido esta mal realizado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Agregar pedidos a sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agregar pedidos a sheet": {
+      "main": [
+        [
+          {
+            "node": "Metodo de pago",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Metodo de pago": {
+      "main": [
+        [
+          {
+            "node": "Transferencia",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Efectivo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transferencia": {
+      "main": [
+        [
+          {
+            "node": "esperando_comprobante",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Efectivo": {
+      "main": [
+        [
+          {
+            "node": "pago_confirmado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "esperando_comprobante": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "909c0031-1971-4a20-8560-4c5da72bbafd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e4fe76a2f920c3511bf864d4bfdb7032e70c745563e9fbed1a83ab8f881fe013"
+  },
+  "id": "0RK7CDo2LTM5D4ui",
+  "tags": []
+}
