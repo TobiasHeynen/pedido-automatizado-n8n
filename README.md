@@ -29,3 +29,13 @@ Permite recibir pedidos por Discord, procesarlos automáticamente, validar compr
 1. Clonar el repositorio:
 ```bash
 git clone https://github.com/TU_USUARIO/n8n-rotiseria-bot.git
+```
+2. Importar los workflows en n8n:
+   - Abrir n8n.
+   - Crear un nuevo workflow → Importar JSON desde workflows/pedido_rotiseria.json y workflows/recibir_comprobantes.json.
+
+4. Configurar credenciales:
+   - Discord Bot Token
+   - Google Sheets API (si se usa)
+
+4. Activar los workflows y empezar a recibir pedidos y comprobantes.
